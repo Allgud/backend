@@ -1,12 +1,58 @@
-const http = require('http');
+const http = require('http')
+const dotenv = require('dotenv')
+dotenv.config()
 
-const server = http.createServer((request, response) => {
+const getUsers = require('./modules/users')
+const PORT = process.env.PORT || 3000
+const ORIGIN = process.env.ORIGIN
 
-    // Написать обработчик запроса:
-    // - Ответом на запрос `?hello=<name>` должна быть **строка** "Hello, <name>.", код ответа 200
-    // - Если параметр `hello` указан, но не передано `<name>`, то ответ **строка** "Enter a name", код ответа 400
-    // - Ответом на запрос `?users` должен быть **JSON** с содержимым файла `data/users.json`, код ответа 200
-    // - Если никакие параметры не переданы, то ответ **строка** "Hello, World!", код ответа 200
-    // - Если переданы какие-либо другие параметры, то пустой ответ, код ответа 500
+const server = http.createServer((req, res) => {
+    const params = new URL(req.url, ORIGIN).searchParams
 
-});
+    if(!params.has('hello') && !params.has('users')) {
+        res.writeHead(500, '', {
+            'Content-type': 'text/plain' 
+        })
+        res.end()
+        return
+    }
+
+    if(params.has('users')) {
+        res.writeHead(200, "OK", {
+            'Content-type': 'application/json'
+        })
+        res.end(getUsers())
+        return
+    }
+
+    if(params.has('hello')) {
+        const value = params.get('hello')
+        if(!value) {
+            res.writeHead(400, {
+                'Content-type': 'text/plain'
+            })
+            res.end(`Enter a name`)
+            return
+       } 
+
+        if(value) {
+            res.writeHead(200, {
+                'Content-type': 'text/plain'
+            })
+            res.end(`Hello, ${value}`)
+            return
+        }
+    }
+
+    
+    res.writeHead(200, {
+        "Content-type": "text/plain"
+    })
+    res.end('Hello World')
+    return
+      
+})
+
+server.listen(PORT, () => {
+    console.log(`Server works on ${ORIGIN}:${PORT}`);
+})
